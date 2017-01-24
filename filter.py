@@ -28,7 +28,7 @@ def format_ip(ip):
 
 def print_event(ctx, data, size):
     event = ct.cast(data, ct.POINTER(Data)).contents
-    print("%s:%d %s:%d %d" % (format_ip(event.saddr), event.sport, format_ip(event.daddr), event.dport, event.type))
+    print("%d %s:%d %s:%d %d" % (event.fn, format_ip(event.saddr), event.sport, format_ip(event.daddr), event.dport, event.type))
 
 b["events"].open_perf_buffer(print_event)
 while 1:
