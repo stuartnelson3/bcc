@@ -22,22 +22,14 @@ struct data_t {
 
 BPF_PERF_OUTPUT(events);
 
-int kprobe__netif_receive_skb(struct pt_regs *ctx, struct __sk_buff *skb)
-{
-        /* stn_emit_event(ctx, skb, 1); */
-        return 0;
-};
-
-
-int kprobe__ip_forward(struct pt_regs *ctx, struct sk_buff *skb)
+static inline void filter_skb(uint fn, struct pt_regs *ctx, struct sk_buff *skb)
 {
         struct data_t d = {};
 
         void *data = (void *)(long)skb->data;
-	void *data_end = (void *)(long)skb->data_len;
 
         if (skb->data_len != 0)
-                return 0;
+                return;
 
 	struct iphdr *ip = data;
 
@@ -45,11 +37,11 @@ int kprobe__ip_forward(struct pt_regs *ctx, struct sk_buff *skb)
         struct tcphdr *tcp = data + sizeof(*ip);
 
         if (skb->len < sizeof(*ip) + sizeof(*tcp))
-                return 0;
+                return;
 
         // Introspect skb for certain things (SYN/SYN-ACK, bond0, src/dst check)
         if (0 == (*tcp).syn)
-                return 0;
+                return;
 
         // Our network address for 10.144.0.0
         __be32 bm = 0x0000800a;
@@ -58,15 +50,15 @@ int kprobe__ip_forward(struct pt_regs *ctx, struct sk_buff *skb)
 
         // Checking that they belong to 10.144.0.0/16
         if (!((ip->saddr & nm) == bm && (ip->daddr & nm) == bm))
-                return 0;
+                return;
 
         // Must belong to different class-c networks
         __be32 dm = 0x00ffffff;
         if ((ip->saddr & dm) == (ip->daddr & dm))
-                return 0;
+                return;
 
         // Make the struct
-        d.fn = 2;
+        d.fn = fn;
         d.type = (*tcp).ack;
         d.saddr = ip->saddr;
         d.daddr = ip->daddr;
@@ -75,5 +67,47 @@ int kprobe__ip_forward(struct pt_regs *ctx, struct sk_buff *skb)
 
         // Send struct to user space
         events.perf_submit(ctx, &d, sizeof(d));
+}
+
+int kprobe__netif_receive_skb(struct pt_regs *ctx, struct sk_buff *skb)
+{
+        filter_skb(1, ctx, skb);
+        return 0;
+};
+
+
+int kprobe__ip_forward(struct pt_regs *ctx, struct sk_buff *skb)
+{
+        filter_skb(2, ctx, skb);
+        return 0;
+};
+
+int kprobe__ip_rcv(struct pt_regs *ctx, struct sk_buff *skb)
+{
+        filter_skb(3, ctx, skb);
+        return 0;
+};
+
+int kprobe__ip_output(struct pt_regs *ctx, struct sk_buff *skb)
+{
+        filter_skb(4, ctx, skb);
+        return 0;
+};
+
+int kprobe__icmp_send(struct pt_regs *ctx, struct sk_buff *skb)
+{
+        filter_skb(5, ctx, skb);
+        return 0;
+};
+
+int kprobe__ip_finish_output(struct pt_regs *ctx, struct sk_buff *skb)
+{
+        filter_skb(6, ctx, skb);
+        return 0;
+};
+
+int kprobe__ip_finish_output2(struct pt_regs *ctx, struct sk_buff *skb)
+{
+        filter_skb(7, ctx, skb);
         return 0;
 };
