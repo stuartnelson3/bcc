@@ -4,6 +4,8 @@ from netaddr import IPAddress
 
 import ctypes as ct
 
+from socket import ntohs, ntohl
+
 # initialize BPF
 b = BPF(src_file="filter.c", debug=0)
 
@@ -24,11 +26,11 @@ class Data(ct.Structure):
                 ("fn", ct.c_ubyte)]
 
 def format_ip(ip):
-    str(IPAddress(ip))
+    return str(IPAddress(ntohl(ip)))
 
 def print_event(ctx, data, size):
     event = ct.cast(data, ct.POINTER(Data)).contents
-    print("%d %s:%d %s:%d %d" % (event.fn, format_ip(event.saddr), event.sport, format_ip(event.daddr), event.dport, event.type))
+    print("%d %s:%d %s:%d %d" % (event.fn, format_ip(event.saddr), ntohs(event.sport), format_ip(event.daddr), ntohs(event.dport), event.type))
 
 b["events"].open_perf_buffer(print_event)
 while 1:
