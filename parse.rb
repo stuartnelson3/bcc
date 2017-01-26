@@ -48,15 +48,21 @@ class OutputSequence
   end
 
   def has_drops?
-    !(seq_one? || seq_two?)
+    !(seq_one? || seq_two? || seq_three? || seq_four?)
   end
 
   def last_fn
     outputs.last.fn_name
   end
 
+  # http://lxr.free-electrons.com/source/net/core/dev.c?v=4.4#L3806
+  # These seem to be the three main patterns I'm seeing. There's A large switch
+  # statement on rx_handler at 3891 that probably is the cause of looping
+  # through the process starting at fn 2.
   SEQUENCE_ONE = [4, 5, 6, 1, 2, 3, 4, 5, 6]
-  SEQUENCE_TWO = [2, 3, 4, 5, 6, 2]
+  SEQUENCE_TWO = [2, 3, 4, 5, 6]
+  SEQUENCE_THREE = [2, 3, 4, 5, 6, 2]
+  SEQUENCE_FOUR = [2, 2, 3, 4, 5, 6]
   # A full sequence may be repeated multiple times within a single ack or
   # syn-ack transmission.
   # Additionally, it appears full syn and syn-ack messages can follow either
@@ -66,7 +72,17 @@ class OutputSequence
   end
 
   def seq_two?
-    fns == SEQUENCE_TWO * (fns.length / SEQUENCE_TWO.length)
+    seq = SEQUENCE_TWO * (fns.length / SEQUENCE_TWO.length)
+    seq_capped = seq + [2]
+    fns == seq || fns == seq_capped
+  end
+
+  def seq_three?
+    fns == SEQUENCE_THREE * (fns.length / SEQUENCE_THREE.length)
+  end
+
+  def seq_four?
+    fns == SEQUENCE_FOUR * (fns.length / SEQUENCE_FOUR.length)
   end
 
   def fns
@@ -74,7 +90,7 @@ class OutputSequence
   end
 end
 
-output = File.readlines('output.txt').map do |line|
+output = File.readlines('output2.txt').map do |line|
   s = line.split
   KprobeOutput.new(s[0].to_i, s[1], s[2], s[3].to_i)
 end
