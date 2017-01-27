@@ -10,15 +10,17 @@ from socket import ntohs, ntohl
 b = BPF(src_file="filter.c", debug=0)
 
 # struct data_t {
-#     u32 saddr;
-#     u32 daddr;
-#     u16 sport;
-#     u16 dport;
-#     u8 type;
-#     u8 fn;
+#         s64 tstamp;
+#         u32 saddr;
+#         u32 daddr;
+#         u16 sport;
+#         u16 dport;
+#         u8 type;
+#         u8 fn;
 # };
 class Data(ct.Structure):
-    _fields_ = [("saddr", ct.c_uint),
+    _fields_ = [("tstamp", ct.c_longlong),
+                ("saddr", ct.c_uint),
                 ("daddr", ct.c_uint),
                 ("sport", ct.c_ushort),
                 ("dport", ct.c_ushort),
@@ -30,7 +32,19 @@ def format_ip(ip):
 
 def print_event(ctx, data, size):
     event = ct.cast(data, ct.POINTER(Data)).contents
-    print("%d %s:%d %s:%d %d" % (event.fn, format_ip(event.saddr), ntohs(event.sport), format_ip(event.daddr), ntohs(event.dport), event.type))
+    print("%d %s %s:%d %s:%d %d" %
+            (event.tstamp, fn_to_name(event.fn), format_ip(event.saddr), ntohs(event.sport), format_ip(event.daddr), ntohs(event.dport), event.type))
+
+def fn_to_name(fn):
+    dictionary = {1 : 'netif_receive_skb',
+            2 : 'ip_rcv',
+            3 : 'ip_forward',
+            4 : 'ip_output',
+            5 : 'ip_finish_output',
+            6 : 'ip_finish_output2',
+            7 : 'icmp_send',
+            8 : 'ip_local_deliver'}
+    return dictionary[fn]
 
 b["events"].open_perf_buffer(print_event)
 while 1:

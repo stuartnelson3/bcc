@@ -1,5 +1,5 @@
 class KprobeOutput
-  attr_reader :fn, :src_ip, :dst_ip, :type
+  attr_reader :ts, :fn, :src_ip, :dst_ip, :type
 
   FN_TO_NAME = {
     1 => 'netif_receive_skb',
@@ -9,9 +9,11 @@ class KprobeOutput
     5 => 'ip_finish_output',
     6 => 'ip_finish_output2',
     7 => 'icmp_send',
+    8 => 'ip_local_deliver',
   }
 
-  def initialize(fn, src_ip, dst_ip, type)
+  def initialize(ts, fn, src_ip, dst_ip, type)
+    @ts = ts
     @fn = fn
     @src_ip = src_ip
     @dst_ip = dst_ip
@@ -90,16 +92,36 @@ class OutputSequence
   end
 end
 
-output = File.readlines('output2.txt').map do |line|
+output = File.readlines('output.txt').map do |line|
   s = line.split
-  KprobeOutput.new(s[0].to_i, s[1], s[2], s[3].to_i)
+  KprobeOutput.new(s[0].to_i, s[1].to_i, s[2], s[3], s[4].to_i)
 end
 
 grouped = output.group_by {|k| "#{k.src_ip} #{k.dst_ip}" }
 
-output_sequences = grouped.each.map do |_,v|
+out = grouped.values.flat_map do |kprobes|
+  kprobes.each_with_index.each_with_object([[]]) do |(kp, i), a|
+    unless kprobes[i+1]
+      a.last << kp
+      next
+    end
+
+    # Chunk by 50ms segments (ts is in microseconds)
+    if (kp.ts - kprobes[i+1].ts).abs < 500
+      a.last << kp
+    else
+      a << [kp]
+    end
+  end
+end
+
+output_sequences = out.map do |v|
   OutputSequence.new(v)
 end
+
+# This gives all the found sequences. Figure out if this looks right:
+# - Are the sequences we're expecting the ones we're getting?
+grouped_sequences = output_sequences.group_by {|e| e.fns }
 
 drop_sequences = output_sequences.select(&:has_drops?)
 

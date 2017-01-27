@@ -12,12 +12,13 @@
 
 // define output data structure in C
 struct data_t {
-    u32 saddr;
-    u32 daddr;
-    u16 sport;
-    u16 dport;
-    u8 type;
-    u8 fn;
+        s64 tstamp;
+        u32 saddr;
+        u32 daddr;
+        u16 sport;
+        u16 dport;
+        u8 type;
+        u8 fn;
 };
 
 BPF_PERF_OUTPUT(events);
@@ -31,7 +32,7 @@ static inline void filter_skb(uint fn, struct pt_regs *ctx, struct sk_buff *skb)
         if (skb->data_len != 0)
                 return;
 
-	struct iphdr *ip = data;
+        struct iphdr *ip = data;
 
         // Find start of tcp hdr by going through to offset.
         struct tcphdr *tcp = data + sizeof(*ip);
@@ -60,6 +61,7 @@ static inline void filter_skb(uint fn, struct pt_regs *ctx, struct sk_buff *skb)
         // Make the struct
         d.fn = fn;
         d.type = (*tcp).ack;
+        d.tstamp = bpf_ktime_get_ns() / 1000; // microsec
         d.saddr = ip->saddr;
         d.daddr = ip->daddr;
         d.sport = tcp->source;
@@ -112,5 +114,12 @@ int kprobe__ip_finish_output2(struct pt_regs *ctx, struct net *net, struct sock 
 int kprobe__icmp_send(struct pt_regs *ctx, struct sk_buff *skb, int type, int code, __be32 info)
 {
         filter_skb(7, ctx, skb);
+        return 0;
+};
+
+// http://lxr.free-electrons.com/source/net/ipv4/ip_input.c?v=4.4#L245
+int kprobe__ip_local_deliver(struct pt_regs *ctx, struct sk_buff *skb)
+{
+        filter_skb(8, ctx, skb);
         return 0;
 };
