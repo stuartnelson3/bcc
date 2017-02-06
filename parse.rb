@@ -110,13 +110,14 @@ grouped = output.group_by {|k| "#{k.src_ip} #{k.dst_ip}" }
 
 output_sequences = grouped.values.lazy.flat_map do |kprobes|
   kprobes.each_with_index.each_with_object([[]]) do |(kp, i), a|
-    unless kprobes[i+1]
+    if i == 0
       a.last << kp
       next
     end
 
     # Chunk by 50ms segments (ts is in microseconds)
-    if (kp.ts - kprobes[i+1].ts).abs < 500
+    # Compare the current kprobe ts to the last kprobe's ts
+    if (kp.ts - a.last.last.ts).abs < 500
       a.last << kp
     else
       a << [kp]
