@@ -98,11 +98,8 @@ end
 output_file = 'output3.txt'
 
 file = File.open(output_file, 'r')
-i = 0
 output = []
-while i < 1_000_000
-  i += 1
-  line = file.gets
+while (line = file.gets)
   s = line.split
   output << KprobeOutput.new(s[0].to_i, s[1], s[2], s[3], s[4].to_i)
 end
