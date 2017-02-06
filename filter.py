@@ -32,18 +32,19 @@ def format_ip(ip):
 
 def print_event(ctx, data, size):
     event = ct.cast(data, ct.POINTER(Data)).contents
-    print("%d %s %s:%d %s:%d %d" %
-            (event.tstamp, fn_to_name(event.fn), format_ip(event.saddr), ntohs(event.sport), format_ip(event.daddr), ntohs(event.dport), event.type))
+    print("%d %d %s:%d %s:%d %d" %
+            (event.tstamp, event.fn, format_ip(event.saddr), ntohs(event.sport), format_ip(event.daddr), ntohs(event.dport), event.type))
 
 def fn_to_name(fn):
-    dictionary = {1 : 'netif_receive_skb',
-            2 : 'ip_rcv',
-            3 : 'ip_forward',
-            4 : 'ip_output',
-            5 : 'ip_finish_output',
-            6 : 'ip_finish_output2',
-            7 : 'icmp_send',
-            8 : 'ip_local_deliver'}
+    dictionary = {10 : 'netif_receive_skb',
+            20 : 'ip_rcv',
+            30 : 'ip_forward',
+            35 : 'ip_forward_finish',
+            40 : 'ip_output',
+            50 : 'ip_finish_output',
+            60 : 'ip_finish_output2',
+            70 : 'icmp_send',
+            80 : 'ip_local_deliver'}
     return dictionary[fn]
 
 b["events"].open_perf_buffer(print_event)

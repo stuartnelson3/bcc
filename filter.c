@@ -73,53 +73,61 @@ static inline void filter_skb(uint fn, struct pt_regs *ctx, struct sk_buff *skb)
 
 int kprobe__netif_receive_skb(struct pt_regs *ctx, struct sk_buff *skb)
 {
-        filter_skb(1, ctx, skb);
+        filter_skb(10, ctx, skb);
         return 0;
 };
 
 int kprobe__ip_rcv(struct pt_regs *ctx, struct sk_buff *skb)
 {
-        filter_skb(2, ctx, skb);
+        filter_skb(20, ctx, skb);
         return 0;
 };
 
+// http://lxr.free-electrons.com/source/net/ipv4/ip_forward.c?v=4.4#L78
 int kprobe__ip_forward(struct pt_regs *ctx, struct sk_buff *skb)
 {
-        filter_skb(3, ctx, skb);
+        filter_skb(30, ctx, skb);
+        return 0;
+};
+
+// http://lxr.free-electrons.com/source/net/ipv4/ip_forward.c?v=4.4#L64
+int kprobe__ip_forward_finish(struct pt_regs *ctx, struct net *net, struct sock *sk, struct sk_buff *skb)
+{
+        filter_skb(35, ctx, skb);
         return 0;
 };
 
 // http://lxr.free-electrons.com/source/net/ipv4/ip_output.c?v=4.4#L349
 int kprobe__ip_output(struct pt_regs *ctx, struct net *net, struct sock *sk, struct sk_buff *skb)
 {
-        filter_skb(4, ctx, skb);
+        filter_skb(40, ctx, skb);
         return 0;
 };
 
 // http://lxr.free-electrons.com/source/net/ipv4/ip_output.c?v=4.4#L266
 int kprobe__ip_finish_output(struct pt_regs *ctx, struct net *net, struct sock *sk, struct sk_buff *skb)
 {
-        filter_skb(5, ctx, skb);
+        filter_skb(50, ctx, skb);
         return 0;
 };
 
 // http://lxr.free-electrons.com/source/net/ipv4/ip_output.c?v=4.4#L175
 int kprobe__ip_finish_output2(struct pt_regs *ctx, struct net *net, struct sock *sk, struct sk_buff *skb)
 {
-        filter_skb(6, ctx, skb);
+        filter_skb(60, ctx, skb);
         return 0;
 };
 
 // http://lxr.free-electrons.com/source/net/ipv4/icmp.c?v-4.4#L568
 int kprobe__icmp_send(struct pt_regs *ctx, struct sk_buff *skb, int type, int code, __be32 info)
 {
-        filter_skb(7, ctx, skb);
+        filter_skb(70, ctx, skb);
         return 0;
 };
 
 // http://lxr.free-electrons.com/source/net/ipv4/ip_input.c?v=4.4#L245
 int kprobe__ip_local_deliver(struct pt_regs *ctx, struct sk_buff *skb)
 {
-        filter_skb(8, ctx, skb);
+        filter_skb(80, ctx, skb);
         return 0;
 };

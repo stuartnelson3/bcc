@@ -2,14 +2,15 @@ class KprobeOutput
   attr_reader :ts, :fn, :src_ip, :dst_ip, :type
 
   FN_TO_NAME = {
-    1 => 'netif_receive_skb',
-    2 => 'ip_rcv',
-    3 => 'ip_forward',
-    4 => 'ip_output',
-    5 => 'ip_finish_output',
-    6 => 'ip_finish_output2',
-    7 => 'icmp_send',
-    8 => 'ip_local_deliver',
+    10 => 'netif_receive_skb',
+    20 => 'ip_rcv',
+    30 => 'ip_forward',
+    35 => 'ip_forward_finish',
+    40 => 'ip_output',
+    50 => 'ip_finish_output',
+    60 => 'ip_finish_output2',
+    70 => 'icmp_send',
+    80 => 'ip_local_deliver',
   }
 
   def initialize(ts, fn, src_ip, dst_ip, type)
@@ -134,20 +135,24 @@ end.sort_by {|k, v| v }
 
 
 NAME_TO_FN = {
-  'netif_receive_skb' => 1,
-  'ip_rcv' => 2,
-  'ip_forward' => 3,
-  'ip_output' => 4,
-  'ip_finish_output' => 5,
-  'ip_finish_output2' => 6,
-  'icmp_send' => 7,
-  'ip_local_deliver' => 8,
+  'netif_receive_skb' => 10,
+  'ip_rcv' => 20,
+  'ip_forward' => 30,
+  'ip_forward_finish' => 35,
+  'ip_output' => 40,
+  'ip_finish_output' => 50,
+  'ip_finish_output2' => 60,
+  'icmp_send' => 70,
+  'ip_local_deliver' => 80,
 }
 
 # Print out the sequences and their occurence percentage
-format_str = "%-16s %s\n"
+format_str = "%-32s %s\n"
 printf(format_str, "SEQUENCE", "PERCENTAGE")
-sequence_percentage.each { |(seq, pc)| printf(format_str, seq.map{|s| NAME_TO_FN[s] }.join, pc) }
+
+format_text = ->(x) { x.map{|s| NAME_TO_FN[s] }.join('-') }
+
+sequence_percentage.each { |(seq, pc)| printf(format_str, seq.join('-'), pc) }
 
 # drop_sequences = output_sequences.select(&:has_drops?)
 #
