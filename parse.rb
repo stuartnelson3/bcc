@@ -148,7 +148,7 @@ NAME_TO_FN = {
 }
 
 # Print out the sequences and their occurence percentage
-format_str = "%-32s %s\n"
+format_str = "%-40s %s\n"
 printf(format_str, "SEQUENCE", "PERCENTAGE")
 
 format_text = ->(x) { x.map{|s| NAME_TO_FN[s] }.join('-') }
