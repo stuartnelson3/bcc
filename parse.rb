@@ -135,10 +135,22 @@ sequence_percentage = grouped_sequences.each_with_object({}) do |(k, v), h|
   h[k] = (v.length.to_f / output_sequences.length * 100).round(5)
 end.sort_by {|k, v| v }
 
+
+NAME_TO_FN = {
+  'netif_receive_skb' => 1,
+  'ip_rcv' => 2,
+  'ip_forward' => 3,
+  'ip_output' => 4,
+  'ip_finish_output' => 5,
+  'ip_finish_output2' => 6,
+  'icmp_send' => 7,
+  'ip_local_deliver' => 8,
+}
+
 # Print out the sequences and their occurence percentage
 format_str = "%-16s %s\n"
 printf(format_str, "SEQUENCE", "PERCENTAGE")
-sequence_percentage.each { |(seq, pc)| printf(format_str, seq.join, pc) }
+sequence_percentage.each { |(seq, pc)| printf(format_str, seq.map{|s| NAME_TO_FN[s] }.join, pc) }
 
 # drop_sequences = output_sequences.select(&:has_drops?)
 #
