@@ -122,20 +122,28 @@ end
 # This gives all the found sequences. Figure out if this looks right:
 # - Are the sequences we're expecting the ones we're getting?
 grouped_sequences = output_sequences.group_by {|e| e.fns }
+sequence_percentage = grouped_sequences.each_with_object({}) do |(k, v), h|
+  h[k] = (v.length.to_f / output_sequences.length * 100).round(5)
+end.sort_by {|k, v| v }
 
-drop_sequences = output_sequences.select(&:has_drops?)
+# Print out the sequences and their occurence percentage
+format_str = "%-16s %s\n"
+printf(format_str, "SEQUENCE", "PERCENTAGE")
+sequence_percentage.each { |(seq, pc)| printf(format_str, seq.join, pc) }
 
-drop_length = drop_sequences.length
-
-if drop_length == 0
-  puts "no drops"
-end
-
-drop_percent = (drop_length.to_f / output_sequences.length * 100).round(2)
-
-puts "total packets: #{output_sequences.length}"
-puts "total drops: #{drop_length} (#{drop_percent}%)"
-
-drop_sequences.each do |seq|
-  puts "drop #{seq.src_ip} #{seq.dst_ip} #{seq.fns} #{seq.type}"
-end
+# drop_sequences = output_sequences.select(&:has_drops?)
+#
+# drop_length = drop_sequences.length
+#
+# if drop_length == 0
+#   puts "no drops"
+# end
+#
+# drop_percent = (drop_length.to_f / output_sequences.length * 100).round(2)
+#
+# puts "total packets: #{output_sequences.length}"
+# puts "total drops: #{drop_length} (#{drop_percent}%)"
+#
+# drop_sequences.each do |seq|
+#   puts "drop #{seq.src_ip} #{seq.dst_ip} #{seq.fns} #{seq.type}"
+# end
