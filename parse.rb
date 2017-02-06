@@ -92,14 +92,25 @@ class OutputSequence
   end
 end
 
-output = File.readlines('output.txt').map do |line|
+
+# Begin scripty part
+
+output_file = 'output3.txt'
+
+file = File.open(output_file, 'r')
+i = 0
+output = []
+while i < 1_000_000
+  i += 1
+  line = file.gets
   s = line.split
-  KprobeOutput.new(s[0].to_i, s[1].to_i, s[2], s[3], s[4].to_i)
+  output << KprobeOutput.new(s[0].to_i, s[1], s[2], s[3], s[4].to_i)
 end
+file.close
 
 grouped = output.group_by {|k| "#{k.src_ip} #{k.dst_ip}" }
 
-out = grouped.values.flat_map do |kprobes|
+output_sequences = grouped.values.lazy.flat_map do |kprobes|
   kprobes.each_with_index.each_with_object([[]]) do |(kp, i), a|
     unless kprobes[i+1]
       a.last << kp
@@ -113,11 +124,9 @@ out = grouped.values.flat_map do |kprobes|
       a << [kp]
     end
   end
-end
-
-output_sequences = out.map do |v|
+end.map do |v|
   OutputSequence.new(v)
-end
+end.force
 
 # This gives all the found sequences. Figure out if this looks right:
 # - Are the sequences we're expecting the ones we're getting?
